@@ -6,7 +6,7 @@ import ShopPage from './pages/shop/Shop.component.jsx';
 import Header from './components/header/Header.component.jsx';
 import SignInAndSignUp from './pages/sign-in-and-sign-up/Sign-In-And-Sign-Up.component.jsx';
 
-import { auth } from './firebase/firebase.utlils';
+import { auth, createUserProfileDocument } from './firebase/firebase.utlils';
 
 class App extends React.Component {
   constructor() {
@@ -19,10 +19,28 @@ class App extends React.Component {
   unsubscribeFromAuth = null;
 
   componentDidMount() {
-    this.unsubscribeFromAuth = auth.onAuthStateChanged((user) => {
-      this.setState({ currentUser: user });
-
-      console.log(user);
+    this.unsubscribeFromAuth = auth.onAuthStateChanged(async (userAuth) => {
+      //Check User Auth during Signin In
+      if (userAuth) {
+        const userRef = await createUserProfileDocument(userAuth);
+        //snaphot of database
+        userRef.onSnapshot((snapShot) => {
+          this.setState(
+            {
+              currentUser: {
+                id: snapShot.id,
+                ...snapShot.data(),
+              },
+              //added 2nd paramter to setState for console log as setstate is ASync
+            },
+            () => {
+              console.log(this.state);
+            }
+          );
+        });
+      } else {
+        this.setState({ currentUser: userAuth });
+      }
     });
   }
 
